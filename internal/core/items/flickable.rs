@@ -538,8 +538,6 @@ impl FlickableDataInner {
         let use_bounce_x = FlickAnimation::use_bounce(effective_bounce(flick, &geo, Dimension::X));
         let use_bounce_y = FlickAnimation::use_bounce(effective_bounce(flick, &geo, Dimension::Y));
         let new_pos = ensure_in_bound(flick, current_pos + delta, &geo, use_bounce_x, use_bounce_y);
-        let _delta_old = delta;
-
         FlickAnimation::apply_friction(current_pos, new_pos - current_pos, flick, flick_rc)
     }
 
@@ -1212,7 +1210,7 @@ impl FlickableData {
                 // the mouse in the flickables coordinate system and never the content coordinate
                 // system.
                 if let Some((_pressed_time, _pressed_mouse_position)) = inner.pressed_mouse_state {
-                    let mouse_delta = *position - inner.last_mouse_position;
+                    let mut mouse_delta = *position - inner.last_mouse_position;
                     let is_capturing = inner.capture_events.is_some_and(|f| {
                         matches!(f, CaptureEvents::MouseStart | CaptureEvents::MouseMove)
                     });
@@ -1223,6 +1221,20 @@ impl FlickableData {
                         // and start capturing mouse events.
                         let content_x = (Flickable::FIELD_OFFSETS.content_x()).apply_pin(flick);
                         let content_y = (Flickable::FIELD_OFFSETS.content_y()).apply_pin(flick);
+
+                        if !is_capturing {
+                            // Subtract DISTANCE_THRESHOLD otherwise we are jumping instead of a smooth start
+                            if mouse_delta.x >= 0. {
+                                mouse_delta.x = (mouse_delta.x - DISTANCE_THRESHOLD.0).max(0.)
+                            } else {
+                                mouse_delta.x = (mouse_delta.x + DISTANCE_THRESHOLD.0).min(0.)
+                            }
+                            if mouse_delta.y >= 0. {
+                                mouse_delta.y = (mouse_delta.y - DISTANCE_THRESHOLD.0).max(0.)
+                            } else {
+                                mouse_delta.y = (mouse_delta.y + DISTANCE_THRESHOLD.0).min(0.)
+                            }
+                        }
 
                         let flicked = inner.scroll_move(
                             flick,
