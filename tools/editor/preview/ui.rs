@@ -62,40 +62,21 @@ fn fuzzy_filter_iter<Item: std::fmt::Debug>(
 }
 
 mod brushes;
-mod conic_gradient;
-mod linear_gradient;
-mod radial_gradient;
 pub(super) use brushes::{fill_brush, fill_expression};
-mod element_library;
 pub(super) mod file_tree;
 pub mod log_messages;
 pub mod palette;
 mod property_view;
-mod recent_fills;
 pub mod search_model;
 
-slint::include_modules!();
+use slint_editor::component_support::{element_library, recent_fills};
+pub use slint_editor::ui::*;
 
 pub type PropertyDeclarations = HashMap<SmolStr, PropertyDeclaration>;
 
 pub fn create_ui() -> Result<EditorUi, PlatformError> {
     let ui = EditorUi::new()?;
-    let cursors = std::cell::RefCell::new(HashMap::<i32, slint::Image>::new());
-    ui.global::<EditorCursors>().on_rotation_image(move |angle| {
-        let angle = angle.round().rem_euclid(360.0) as i32;
-        cursors
-            .borrow_mut()
-            .entry(angle)
-            .or_insert_with(|| {
-                let svg = include_str!("../ui/assets/cursors/rotate.svg")
-                    .replace("{angle}", &angle.to_string());
-                let image = slint::Image::load_from_svg_data(svg.as_bytes())
-                    .expect("valid rotation cursor SVG");
-                // Match the fixed-pixel canvas pointer; native SVG cursors scale with the display.
-                slint::Image::from_rgba8(image.to_rgba8().expect("rotation cursor pixels"))
-            })
-            .clone()
-    });
+    slint_editor::component_support::cursors::setup(&ui.global::<EditorCursors>());
     Ok(ui)
 }
 
