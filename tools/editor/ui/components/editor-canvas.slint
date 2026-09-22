@@ -85,8 +85,6 @@ export component EditorCanvas inherits Rectangle {
                 component-factory: Api.preview-area;
             }
 
-            @children
-
             DropArea {
                 can-drop(event) => {
                     if AppState.palette-drag-cancelled {
